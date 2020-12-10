@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Linq;
 using System;
 using Xunit;
@@ -45,6 +47,26 @@ namespace LoadBalancerTests
 
             lb.Register(new[] { new Provider("6") });
             Assert.Equal(6, lb.ProvidersCount);
+        }
+
+        [Fact]
+        public void GetWithNoProvidersThrows()
+        {
+            var lb = new LoadBalancer(10);
+            Assert.ThrowsAsync<InvalidOperationException>(() => lb.Get());
+        }
+
+        [Fact]
+        public async void GetRandomInvocationSuccess()
+        {
+            var lb = new LoadBalancer(5);
+            var ids = new HashSet<string>{"0", "1", "2", "3", "4"};
+            lb.Register(ids.Select(id => new Provider(id)));
+            var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => lb.Get()));
+            foreach (var r in results)
+            {
+                Assert.Contains(r, ids);
+            }
         }
     }
 }

@@ -1,11 +1,15 @@
-using System.Linq;
+using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LoadBalancerSimulator
 {
     public class LoadBalancer
     {
-        private Dictionary<string, Provider> providers = new Dictionary<string, Provider>();
+        private ConcurrentDictionary<string, Provider> providers = new ConcurrentDictionary<string, Provider>();
+        private Selector<string>? selector = null;
 
         public LoadBalancer(int capacity)
         {
@@ -34,7 +38,54 @@ namespace LoadBalancerSimulator
                     break;
                 }
             }
+            selector = new RandomSelector<string>(providers.Keys);
             return count;
+        }
+
+        public async Task<string> Get()
+        {
+            if (selector == null)
+            {
+                throw new InvalidOperationException("No providers registered.");
+            }
+            var id = selector.Select();
+            if (!providers.TryGetValue(id, out var provider))
+            {
+                throw new KeyNotFoundException($"Provider with id {id} was removed.");
+            }
+            return await provider.Get();
+        }
+
+
+        private abstract class Selector<T>
+        {
+            protected T[] values;
+
+            public Selector(IEnumerable<T> values)
+            {
+                if (!values.Any())
+                {
+                    throw new ArgumentException("Empty values for Selector");
+                }
+                this.values = values.ToArray();
+            }
+
+            public abstract T Select();
+        }
+
+        private class RandomSelector<T> : Selector<T>
+        {
+            public Random rng = new Random();
+
+            public RandomSelector(IEnumerable<T> values) : base(values)
+            {
+            }
+
+            public override T Select()
+            {
+                var index = rng.Next(values.Length);
+                return values[index];
+            }
         }
     }
 }
