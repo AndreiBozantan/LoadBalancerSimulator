@@ -2,14 +2,14 @@ using System.Threading.Tasks;
 
 namespace LoadBalancerSimulator
 {
-    class Provider
+    public class Provider
     {
         public Provider(string id)
         {
             Id = id;
         }
 
-        private string Id { get; }
+        public string Id { get; }
 
         public async Task<string> Get()
         {
