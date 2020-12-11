@@ -13,9 +13,13 @@ namespace LoadBalancerSimulator
 
         public IServiceProvider Provider { get; }
 
+        public string Id => Provider.Id;
+
+        public bool InService => !Excluded && SuccessfulConsecutiveChecks >= 2;
+
         public bool Excluded { get; set; }
 
-        public string Id => Provider.Id;
+        public int SuccessfulConsecutiveChecks { get; private set; } = 0;
 
         public Task<string> Get()
         {
@@ -33,7 +37,7 @@ namespace LoadBalancerSimulator
                 var ret = await Provider.Check();
                 if (!ret)
                 {
-                    Excluded = true;
+                    SuccessfulConsecutiveChecks = 0;
                     return false;
                 }
             }
@@ -41,9 +45,10 @@ namespace LoadBalancerSimulator
             {
                 Console.WriteLine($"Heartbeat check failed for provider with Id {Id}");
                 Console.WriteLine(ex);
-                Excluded = true;
+                SuccessfulConsecutiveChecks = 0;
                 return false;
             }
+            SuccessfulConsecutiveChecks++;
             return true;
         }
     }

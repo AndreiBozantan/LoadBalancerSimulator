@@ -104,7 +104,7 @@ namespace LoadBalancerSimulator
 
         private void UpdateSelectorValues()
         {
-            var ids = providers.ToArray().Where(kv => !kv.Value.Excluded).Select(kv => kv.Key);
+            var ids = providers.ToArray().Where(kv => kv.Value.InService).Select(kv => kv.Key);
             selector.UpdateValues(ids);
         }
 
