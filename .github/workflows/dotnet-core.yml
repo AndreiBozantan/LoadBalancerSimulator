@@ -24,4 +24,4 @@ jobs:
     - name: Test
       run: dotnet test --verbosity normal LoadBalancerTests/LoadBalancerTests.csproj
     - name: Sample
-      run: dotnet run Samples/samples.csproj
+      run: dotnet run --project Samples/samples.csproj
