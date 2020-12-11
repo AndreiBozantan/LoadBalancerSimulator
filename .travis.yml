@@ -1,0 +1,10 @@
+language: csharp
+solution: explorer.sln
+dotnet: 3.1
+mono: none
+install:
+  - dotnet restore Samples/samples.csproj
+script:
+  - dotnet build -warnAsError Samples/samples.csproj
+  - dotnet test --verbosity normal LoadBalancerTests/LoadBalancerTests.csproj.sln
+  - dotnet run Samples/samples.csproj.sln
