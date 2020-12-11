@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
-using LoadBalancerSimulator.Selectors;
+using LoadBalancerSimulator.Internal.Selectors;
 
 namespace LoadBalancerSimulator
 {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LoadBalancerSimulator.Selectors
+namespace LoadBalancerSimulator.Internal.Selectors
 {
     abstract class Selector<T>
     {

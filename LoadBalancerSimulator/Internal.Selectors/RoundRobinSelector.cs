@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace LoadBalancerSimulator.Selectors
+namespace LoadBalancerSimulator.Internal.Selectors
 {
     class RoundRobinSelector<T> : Selector<T>
     {
