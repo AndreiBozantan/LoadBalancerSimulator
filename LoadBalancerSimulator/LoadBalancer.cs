@@ -44,7 +44,7 @@ namespace LoadBalancerSimulator
 
         public int ConcurrentRequestCount { get => concurrentRequestCount; private set => concurrentRequestCount = value; }
 
-        public int ProvidersInServiceCount { get; private set; }
+        public int ProvidersAliveCount { get; private set; }
 
         public int TotalProvidersCount { get => this.providers.Count; }
 
@@ -103,7 +103,7 @@ namespace LoadBalancerSimulator
             StatefulProvider? provider = null;
             lock (selector)
             {
-                if (ProvidersInServiceCount == 0)
+                if (ProvidersAliveCount == 0)
                 {
                     throw new InvalidOperationException("No alive providers.");
                 }
@@ -115,7 +115,7 @@ namespace LoadBalancerSimulator
                 // interlocked is used here because the final decrement is outside the lock
                 // (since we do not lock the balancer while waiting for the response from a provider)
                 Interlocked.Increment(ref concurrentRequestCount);
-                var maxConcurrentRequests = ProvidersInServiceCount * MaxParallelRequestsPerProvider;
+                var maxConcurrentRequests = ProvidersAliveCount * MaxParallelRequestsPerProvider;
                 if (ConcurrentRequestCount > maxConcurrentRequests)
                 {
                     Interlocked.Decrement(ref concurrentRequestCount);
@@ -140,24 +140,23 @@ namespace LoadBalancerSimulator
         public void DisplayStatus(System.IO.TextWriter tw, bool displayProviders)
         {
             tw.Write("Load Balancer status: ");
-            tw.Write($" requests:  {ConcurrentRequestCount} / {ProvidersInServiceCount * MaxParallelRequestsPerProvider};");
-            tw.WriteLine($" providers: {ProvidersInServiceCount} / {TotalProvidersCount}");
+            tw.Write($" requests:  {ConcurrentRequestCount} / {ProvidersAliveCount * MaxParallelRequestsPerProvider};");
+            tw.WriteLine($" providers: {ProvidersAliveCount} / {TotalProvidersCount}");
             if (displayProviders)
             {
                 foreach (var kv in providers)
                 {
                     var p = kv.Value;
-                    var status = p.InService ? "ON " : "off";
-                    System.Console.WriteLine($"   provider: {p.Id}; status: {status}; HeartBeats: {p.SuccessfulConsecutiveChecks}; excluded: {p.Excluded}");
+                    System.Console.WriteLine($"   provider: {p.Id}; status: {p.StatusString}; tasks: {p.TaskCount}; HeartBeats: {p.SuccessfulConsecutiveChecks}; excluded: {p.Excluded}");
                 }
             }
         }
 
         private void UpdateSelectorValues()
         {
-            var ids = providers.ToArray().Where(kv => kv.Value.InService).Select(kv => kv.Key);
+            var ids = providers.ToArray().Where(kv => kv.Value.IsAlive).Select(kv => kv.Key);
             selector.UpdateValues(ids);
-            ProvidersInServiceCount = ids.Count();
+            ProvidersAliveCount = ids.Count();
         }
 
         private async Task HeartbeatCheck()

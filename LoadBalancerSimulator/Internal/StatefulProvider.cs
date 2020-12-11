@@ -6,29 +6,77 @@ namespace LoadBalancerSimulator
 {
     class StatefulProvider : IServiceProvider
     {
+        public enum ProviderStatus
+        {
+            Excluded,
+            NoHeartBeat,
+            Alive,
+            Busy
+        };
+
+        private int taskCount = 0;
+
         public int DefaultRequestTimeout = 2000;
 
         public StatefulProvider(IServiceProvider provider)
         {
             Provider = provider;
-            Excluded = false;
         }
 
         public IServiceProvider Provider { get; }
 
         public string Id => Provider.Id;
 
-        public bool InService => !Excluded && SuccessfulConsecutiveChecks >= 2;
+        public bool IsAlive => !Excluded && SuccessfulConsecutiveChecks >= 2;
 
-        public bool Excluded { get; set; }
+        public int TaskCount { get => taskCount; private set => taskCount = value; }
+
+        public bool Excluded { get; set; } = false;
 
         public int SuccessfulConsecutiveChecks { get; private set; } = 2;
 
-        public Task<string> Get()
+        public ProviderStatus Status
+        {
+            get
+            {
+                if (Excluded)
+                    return ProviderStatus.Excluded;
+                if (SuccessfulConsecutiveChecks < 2)
+                    return ProviderStatus.NoHeartBeat;
+                if (TaskCount == 0)
+                    return ProviderStatus.Alive;
+                return ProviderStatus.Busy;
+            }
+        }
+
+        public string StatusString
+        {
+            get
+            {
+                switch (Status)
+                {
+                    case ProviderStatus.Excluded: return "EXCL";
+                    case ProviderStatus.NoHeartBeat: return "DEAD";
+                    case ProviderStatus.Alive: return "LIVE";
+                    case ProviderStatus.Busy: return "BUSY";
+                }
+                return "?";
+            }
+        }
+
+        public async Task<string> Get()
         {
             using (var cts = new CancellationTokenSource(DefaultRequestTimeout))
             {
-                return Task.Run(() => Provider.Get(), cts.Token);
+                try
+                {
+                    Interlocked.Increment(ref taskCount);
+                    return await Task.Run(() => Provider.Get(), cts.Token);
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref taskCount);
+                }
             }
         }
 
