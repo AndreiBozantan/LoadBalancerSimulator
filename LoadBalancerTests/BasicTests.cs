@@ -93,6 +93,7 @@ namespace LoadBalancerTests
         public async void GetRoundRobinInvocationSuccess()
         {
             var lb = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.RoundRobin, TimeSpan.FromSeconds(2));
+            lb.MaxParallelRequestsPerProvider = 5;
             lb.Register(Enumerable.Range(0, 5).Select(id => new SimpleProvider(id.ToString())));
             var results = await Task.WhenAll(Enumerable.Range(0, 15).Select(_ => lb.Get()));
             Assert.Equal(new[] { "0", "1", "2", "3", "4", "0", "1", "2", "3", "4", "0", "1", "2", "3", "4"}, results);
