@@ -7,7 +7,7 @@ using LoadBalancerSimulator.Selectors;
 
 namespace LoadBalancerSimulator
 {
-    public class LoadBalancer
+    public class LoadBalancer : IServiceProvider
     {
         private ConcurrentDictionary<string, IServiceProvider> providers = new ConcurrentDictionary<string, IServiceProvider>();
         private Selector<string>? selector = null;
@@ -21,6 +21,7 @@ namespace LoadBalancerSimulator
 
         public LoadBalancer(int capacity, ProviderSelectorType pst)
         {
+            Id = Guid.NewGuid().ToString();
             Capacity = capacity;
             providerSelectorType = pst;
         }
@@ -28,6 +29,8 @@ namespace LoadBalancerSimulator
         public int Capacity { get; }
 
         public int ProvidersCount { get => this.providers.Count; }
+
+        public string Id { get; }
 
         /// <summary>
         /// Registers a list of providers, up to the load balancer capacity.
