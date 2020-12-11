@@ -1,3 +1,4 @@
+using System.Threading;
 using System;
 using System.Threading.Tasks;
 
@@ -5,6 +6,8 @@ namespace LoadBalancerSimulator
 {
     class StatefulProvider : IServiceProvider
     {
+        public int DefaultRequestTimeout = 2000;
+
         public StatefulProvider(IServiceProvider provider)
         {
             Provider = provider;
@@ -23,7 +26,10 @@ namespace LoadBalancerSimulator
 
         public Task<string> Get()
         {
-            return Provider.Get();
+            using (var cts = new CancellationTokenSource(DefaultRequestTimeout))
+            {
+                return Task.Run(() => Provider.Get(), cts.Token);
+            }
         }
 
         public async Task<bool> Check()
@@ -34,11 +40,14 @@ namespace LoadBalancerSimulator
             }
             try
             {
-                var ret = await Provider.Check();
-                if (!ret)
+                using (var cts = new CancellationTokenSource(DefaultRequestTimeout))
                 {
-                    SuccessfulConsecutiveChecks = 0;
-                    return false;
+                    var ret = await Task.Run(() => Provider.Check(), cts.Token);
+                    if (!ret)
+                    {
+                        SuccessfulConsecutiveChecks = 0;
+                        return false;
+                    }
                 }
             }
             catch (Exception ex)
