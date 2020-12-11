@@ -10,7 +10,7 @@ namespace LoadBalancerSimulator.Internal.Selectors
         {
         }
 
-        public override T Select()
+        protected override T GetValue()
         {
             lock (this)
             {
@@ -18,6 +18,11 @@ namespace LoadBalancerSimulator.Internal.Selectors
                 index = (index + 1) % values.Length;
                 return val;
             }
+        }
+
+        protected override void UpdateState()
+        {
+            index = index % values.Length;
         }
     }
 }

@@ -20,14 +20,39 @@ namespace LoadBalancerSimulator.Internal.Selectors
 
         public Selector(IEnumerable<T> values)
         {
-            if (!values.Any())
-            {
-                throw new ArgumentException("Empty values for Selector");
-            }
-            this.values = values.ToArray();
-            Array.Sort(this.values);
+            this.values = GetNewValues(values);
         }
 
-        public abstract T Select();
+        public int ValuesCount => values.Length;
+
+        public void UpdateValues(IEnumerable<T> newValues)
+        {
+            lock (this)
+            {
+                values = GetNewValues(newValues);
+                UpdateState();
+            }
+        }
+
+        public T Select()
+        {
+            lock (this)
+            {
+                return GetValue();
+            }
+        }
+
+        protected abstract T GetValue();
+
+        protected virtual void UpdateState()
+        {
+        }
+
+        private static T[] GetNewValues(IEnumerable<T> values)
+        {
+            var ret = values.ToArray();
+            Array.Sort(ret);
+            return ret;
+        }
     }
 }

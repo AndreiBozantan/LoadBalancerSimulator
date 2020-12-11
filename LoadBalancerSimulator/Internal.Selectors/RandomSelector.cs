@@ -11,7 +11,7 @@ namespace LoadBalancerSimulator.Internal.Selectors
         {
         }
 
-        public override T Select()
+        protected override T GetValue()
         {
             var index = rng.Next(values.Length);
             return values[index];

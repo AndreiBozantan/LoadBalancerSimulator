@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 
 using LoadBalancerSimulator.Internal.Selectors;
@@ -10,8 +11,7 @@ namespace LoadBalancerSimulator
     public class LoadBalancer : IServiceProvider
     {
         private ConcurrentDictionary<string, StatefulProvider> providers = new ConcurrentDictionary<string, StatefulProvider>();
-        private Selector<string>? selector = null;
-        private ProviderSelectorType providerSelectorType;
+        private Selector<string> selector;
 
         public enum ProviderSelectorType
         {
@@ -23,7 +23,7 @@ namespace LoadBalancerSimulator
         {
             Id = Guid.NewGuid().ToString();
             Capacity = capacity;
-            providerSelectorType = pst;
+            selector = Selector<string>.Create(pst, Enumerable.Empty<string>());
         }
 
         public int Capacity { get; }
@@ -31,6 +31,25 @@ namespace LoadBalancerSimulator
         public int ProvidersCount { get => this.providers.Count; }
 
         public string Id { get; }
+
+        public void SetProviderExcluded(IServiceProvider p, bool excluded)
+        {
+            if (!providers.TryGetValue(p.Id, out var provider))
+            {
+                throw new ArgumentException("Provider is not registered.");
+            }
+            provider.Excluded = excluded;
+            UpdateSelectorValues();
+        }
+
+        public bool IsProviderExcluded(IServiceProvider p)
+        {
+            if (!providers.TryGetValue(p.Id, out var provider))
+            {
+                throw new ArgumentException("Provider is not registered.");
+            }
+            return provider.Excluded;
+        }
 
         /// <summary>
         /// Registers a list of providers, up to the load balancer capacity.
@@ -51,13 +70,13 @@ namespace LoadBalancerSimulator
                 providers[p.Id] = new StatefulProvider(p);
                 count++;
             }
-            selector = Selector<string>.Create(providerSelectorType, providers.Keys);
+            UpdateSelectorValues();
             return count;
         }
 
         public async Task<string> Get()
         {
-            if (selector == null)
+            if (selector == null || selector.ValuesCount == 0)
             {
                 throw new InvalidOperationException("No providers registered.");
             }
@@ -69,5 +88,10 @@ namespace LoadBalancerSimulator
             return await provider.Get();
         }
 
+        private void UpdateSelectorValues()
+        {
+            var ids = providers.ToArray().Where(kv => !kv.Value.Excluded).Select(kv => kv.Key);
+            selector.UpdateValues(ids);
+        }
     }
 }
