@@ -9,7 +9,7 @@ namespace LoadBalancerSimulator
 {
     public class LoadBalancer : IServiceProvider
     {
-        private ConcurrentDictionary<string, IServiceProvider> providers = new ConcurrentDictionary<string, IServiceProvider>();
+        private ConcurrentDictionary<string, StatefulProvider> providers = new ConcurrentDictionary<string, StatefulProvider>();
         private Selector<string>? selector = null;
         private ProviderSelectorType providerSelectorType;
 
@@ -48,7 +48,7 @@ namespace LoadBalancerSimulator
                 {
                     break;
                 }
-                providers[p.Id] = p;
+                providers[p.Id] = new StatefulProvider(p);
                 count++;
             }
             selector = Selector<string>.Create(providerSelectorType, providers.Keys);
