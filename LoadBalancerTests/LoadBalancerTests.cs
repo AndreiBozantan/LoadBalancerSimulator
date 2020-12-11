@@ -19,7 +19,7 @@ namespace LoadBalancerTests
         [InlineData(13)]
         public void TestRegisterCapacity(int capacity)
         {
-            var lb = new LoadBalancer(capacity, LoadBalancer.ProviderSelectorType.Random);
+            var lb = new LoadBalancer(capacity, LoadBalancer.ProviderSelectorType.Random, TimeSpan.FromSeconds(2));
 
             var providers1 = Enumerable.Range(0, 6).Select(i => new SimpleProvider(i.ToString()));
             var c1 = lb.Register(providers1);
@@ -35,7 +35,7 @@ namespace LoadBalancerTests
         [Fact]
         public void TestDuplicateProviderId()
         {
-            var lb = new LoadBalancer(10, LoadBalancer.ProviderSelectorType.Random);
+            var lb = new LoadBalancer(10, LoadBalancer.ProviderSelectorType.Random, TimeSpan.FromSeconds(2));
 
             var providers1 = Enumerable.Range(0, 5).Select(i => new SimpleProvider(i.ToString()));
             var c1 = lb.Register(providers1);
@@ -52,14 +52,14 @@ namespace LoadBalancerTests
         [Fact]
         public void GetWithNoProvidersThrows()
         {
-            var lb = new LoadBalancer(10, LoadBalancer.ProviderSelectorType.Random);
+            var lb = new LoadBalancer(10, LoadBalancer.ProviderSelectorType.Random, TimeSpan.FromSeconds(2));
             Assert.ThrowsAsync<InvalidOperationException>(() => lb.Get());
         }
 
         [Fact]
         public async void GetRandomInvocationSuccess()
         {
-            var lb = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.Random);
+            var lb = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.Random, TimeSpan.FromSeconds(2));
             var ids = new HashSet<string>{"0", "1", "2", "3", "4"};
             lb.Register(ids.Select(id => new SimpleProvider(id)));
             var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => lb.Get()));
@@ -72,7 +72,7 @@ namespace LoadBalancerTests
         [Fact]
         public async void GetRoundRobinInvocationSuccess()
         {
-            var lb = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.RoundRobin);
+            var lb = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.RoundRobin, TimeSpan.FromSeconds(2));
             lb.Register(Enumerable.Range(0, 5).Select(id => new SimpleProvider(id.ToString())));
             var results = await Task.WhenAll(Enumerable.Range(0, 15).Select(_ => lb.Get()));
             Assert.Equal(new[] { "0", "1", "2", "3", "4", "0", "1", "2", "3", "4", "0", "1", "2", "3", "4"}, results);

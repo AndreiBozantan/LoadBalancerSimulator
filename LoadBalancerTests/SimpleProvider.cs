@@ -18,5 +18,10 @@ namespace LoadBalancerTests
             await Task.Delay(1000);
             return await Task.FromResult(Id);
         }
+
+        public Task<bool> Check()
+        {
+            return Task.FromResult(true);
+        }
     }
 }

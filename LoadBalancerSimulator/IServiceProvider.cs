@@ -7,5 +7,7 @@ namespace LoadBalancerSimulator
         string Id { get; }
 
         Task<string> Get();
+
+        Task<bool> Check();
     }
 }

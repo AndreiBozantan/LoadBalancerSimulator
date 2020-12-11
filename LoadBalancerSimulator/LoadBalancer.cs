@@ -12,6 +12,7 @@ namespace LoadBalancerSimulator
     {
         private ConcurrentDictionary<string, StatefulProvider> providers = new ConcurrentDictionary<string, StatefulProvider>();
         private Selector<string> selector;
+        private Task heartbeatCheckTask;
 
         public enum ProviderSelectorType
         {
@@ -19,11 +20,19 @@ namespace LoadBalancerSimulator
             RoundRobin
         }
 
-        public LoadBalancer(int capacity, ProviderSelectorType pst)
+        public LoadBalancer(int capacity, ProviderSelectorType pst, TimeSpan heartbeatInterval)
         {
             Id = Guid.NewGuid().ToString();
             Capacity = capacity;
             selector = Selector<string>.Create(pst, Enumerable.Empty<string>());
+            heartbeatCheckTask = Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(heartbeatInterval);
+                    await HeartbeatCheck();
+                }
+            });
         }
 
         public int Capacity { get; }
@@ -88,10 +97,26 @@ namespace LoadBalancerSimulator
             return await provider.Get();
         }
 
+        public Task<bool> Check()
+        {
+            return Task.FromResult(true);
+        }
+
         private void UpdateSelectorValues()
         {
             var ids = providers.ToArray().Where(kv => !kv.Value.Excluded).Select(kv => kv.Key);
             selector.UpdateValues(ids);
+        }
+
+        private async Task HeartbeatCheck()
+        {
+            var checkTasks = providers.Values.Select(async p =>
+            {
+                var status = await p.Check();
+                System.Console.WriteLine($"Heartbeat check provider {p.Id}: {status}");
+            });
+            await Task.WhenAll(checkTasks);
+            UpdateSelectorValues();
         }
     }
 }
