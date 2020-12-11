@@ -6,16 +6,19 @@ namespace LoadBalancerTests
 {
     public class SimpleProvider : IServiceProvider
     {
-        public SimpleProvider(string id)
+        private readonly int requestDuration;
+
+        public SimpleProvider(string id, int requestDuration = 1000)
         {
             Id = id;
+            this.requestDuration = requestDuration;
         }
 
         public string Id { get; }
 
         public async Task<string> Get()
         {
-            await Task.Delay(1000);
+            await Task.Delay(this.requestDuration);
             return await Task.FromResult(Id);
         }
 

@@ -137,6 +137,22 @@ namespace LoadBalancerSimulator
             return Task.FromResult(true);
         }
 
+        public void DisplayStatus(System.IO.TextWriter tw, bool displayProviders)
+        {
+            tw.Write("Load Balancer status: ");
+            tw.Write($" requests:  {ConcurrentRequestCount} / {ProvidersInServiceCount * MaxParallelRequestsPerProvider};");
+            tw.WriteLine($" providers: {ProvidersInServiceCount} / {TotalProvidersCount}");
+            if (displayProviders)
+            {
+                foreach (var kv in providers)
+                {
+                    var p = kv.Value;
+                    var status = p.InService ? "ON " : "off";
+                    System.Console.WriteLine($"   provider: {p.Id}; status: {status}; HeartBeats: {p.SuccessfulConsecutiveChecks}; excluded: {p.Excluded}");
+                }
+            }
+        }
+
         private void UpdateSelectorValues()
         {
             var ids = providers.ToArray().Where(kv => kv.Value.InService).Select(kv => kv.Key);
