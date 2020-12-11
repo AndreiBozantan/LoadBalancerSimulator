@@ -22,7 +22,7 @@ namespace LoadBalancerSimulator
 
         public bool Excluded { get; set; }
 
-        public int SuccessfulConsecutiveChecks { get; private set; } = 0;
+        public int SuccessfulConsecutiveChecks { get; private set; } = 2;
 
         public Task<string> Get()
         {
