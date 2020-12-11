@@ -6,11 +6,7 @@ namespace LoadBalancerSimulator.Internal.Selectors
     {
         public int index = 0;
 
-        public RoundRobinSelector(IEnumerable<T> values) : base(values)
-        {
-        }
-
-        protected override T GetValue()
+        public override T Select()
         {
             lock (this)
             {
