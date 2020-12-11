@@ -22,11 +22,11 @@ namespace LoadBalancerSimulator
             RoundRobin
         }
 
-        public LoadBalancer(int capacity, ProviderSelectorType pst, TimeSpan heartbeatInterval)
+        public LoadBalancer(int maxProvidersCount, ProviderSelectorType pst, TimeSpan heartbeatInterval)
         {
             Id = Guid.NewGuid().ToString();
-            Capacity = capacity;
-            concurrentRequestCount = 0;
+            MaxProvidersCount = maxProvidersCount;
+            ConcurrentRequestCount = 0;
             selector = Selector<string>.Create(pst);
             heartbeatCheckTask = Task.Run(async () =>
             {
@@ -38,13 +38,15 @@ namespace LoadBalancerSimulator
             });
         }
 
-        public int ParallelRequestsPerProviderLimit { get; set; } = 2;
+        public int MaxParallelRequestsPerProvider { get; set; } = 2;
 
-        public int Capacity { get; }
+        public int MaxProvidersCount { get; }
+
+        public int ConcurrentRequestCount { get => concurrentRequestCount; private set => concurrentRequestCount = value; }
 
         public int ProvidersInServiceCount { get; private set; }
 
-        public int ProvidersCount { get => this.providers.Count; }
+        public int TotalProvidersCount { get => this.providers.Count; }
 
         public string Id { get; }
 
@@ -80,7 +82,7 @@ namespace LoadBalancerSimulator
         {
             lock (selector)
             {
-                var maxCount = Capacity - this.providers.Count;
+                var maxCount = MaxProvidersCount - this.providers.Count;
                 var count = 0;
                 foreach (var p in newProviders)
                 {
@@ -113,7 +115,8 @@ namespace LoadBalancerSimulator
                 // interlocked is used here because the final decrement is outside the lock
                 // (since we do not lock the balancer while waiting for the response from a provider)
                 Interlocked.Increment(ref concurrentRequestCount);
-                if (concurrentRequestCount > ProvidersInServiceCount * ParallelRequestsPerProviderLimit)
+                var maxConcurrentRequests = ProvidersInServiceCount * MaxParallelRequestsPerProvider;
+                if (ConcurrentRequestCount > maxConcurrentRequests)
                 {
                     Interlocked.Decrement(ref concurrentRequestCount);
                     throw new Exception("Maximum cluster capacity exceeded.");
@@ -146,7 +149,6 @@ namespace LoadBalancerSimulator
             var checkTasks = providers.Values.Select(async p =>
             {
                 var status = await p.Check();
-                System.Console.WriteLine($"Heartbeat check provider {p.Id}: {status}");
             });
             await Task.WhenAll(checkTasks);
             lock (selector)

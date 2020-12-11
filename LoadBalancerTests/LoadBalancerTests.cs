@@ -23,12 +23,12 @@ namespace LoadBalancerTests
 
             var providers1 = Enumerable.Range(0, 6).Select(i => new SimpleProvider(i.ToString()));
             var c1 = lb.Register(providers1);
-            Assert.Equal(6, lb.ProvidersCount);
+            Assert.Equal(6, lb.TotalProvidersCount);
             Assert.Equal(6, c1);
 
             var providers2 = Enumerable.Range(6, 10).Select(i => new SimpleProvider(i.ToString()));
             var c2 = lb.Register(providers2);
-            Assert.Equal(capacity, lb.ProvidersCount);
+            Assert.Equal(capacity, lb.TotalProvidersCount);
             Assert.Equal(capacity - 6, c2);
         }
 
@@ -39,14 +39,14 @@ namespace LoadBalancerTests
 
             var providers1 = Enumerable.Range(0, 5).Select(i => new SimpleProvider(i.ToString()));
             var c1 = lb.Register(providers1);
-            Assert.Equal(5, lb.ProvidersCount);
+            Assert.Equal(5, lb.TotalProvidersCount);
             Assert.Equal(5, c1);
 
             lb.Register(new[] { new SimpleProvider("0") });
-            Assert.Equal(5, lb.ProvidersCount);
+            Assert.Equal(5, lb.TotalProvidersCount);
 
             lb.Register(new[] { new SimpleProvider("6") });
-            Assert.Equal(6, lb.ProvidersCount);
+            Assert.Equal(6, lb.TotalProvidersCount);
         }
 
         [Fact]
