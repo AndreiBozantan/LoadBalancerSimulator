@@ -15,6 +15,10 @@ namespace Samples
             var t1 = new ClusterCapacityTests();
             t1.TestClusterCapacityLimit1().Wait();
             t1.TestClusterCapacityLimit2().Wait();
+
+            var t2 = new HeartBeatTests();
+            t2.TestExcludeOnFailure().Wait();
+            t2.TestIncludeRecoveredProvider().Wait();
         }
     }
 }
