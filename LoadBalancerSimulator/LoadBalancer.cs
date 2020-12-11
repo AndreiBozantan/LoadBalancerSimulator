@@ -9,7 +9,7 @@ namespace LoadBalancerSimulator
 {
     public class LoadBalancer
     {
-        private ConcurrentDictionary<string, Provider> providers = new ConcurrentDictionary<string, Provider>();
+        private ConcurrentDictionary<string, IServiceProvider> providers = new ConcurrentDictionary<string, IServiceProvider>();
         private Selector<string>? selector = null;
         private ProviderSelectorType providerSelectorType;
 
@@ -35,7 +35,7 @@ namespace LoadBalancerSimulator
         /// </summary>
         /// <param name="newProviders">The new providers to be added.</param>
         /// <returns>The number of added providers</returns>
-        public int Register(IEnumerable<Provider> newProviders)
+        public int Register(IEnumerable<IServiceProvider> newProviders)
         {
             var maxCount = Capacity - this.providers.Count;
             var count = 0;

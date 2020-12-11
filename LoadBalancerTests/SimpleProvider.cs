@@ -1,10 +1,12 @@
 using System.Threading.Tasks;
 
-namespace LoadBalancerSimulator
+using IServiceProvider = LoadBalancerSimulator.IServiceProvider;
+
+namespace LoadBalancerTests
 {
-    public class Provider
+    public class SimpleProvider : IServiceProvider
     {
-        public Provider(string id)
+        public SimpleProvider(string id)
         {
             Id = id;
         }
