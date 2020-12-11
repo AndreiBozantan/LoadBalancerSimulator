@@ -41,11 +41,12 @@ namespace LoadBalancerSimulator
             var count = 0;
             foreach (var p in newProviders)
             {
-                providers[p.Id] = p;
                 if (count == maxCount)
                 {
                     break;
                 }
+                providers[p.Id] = p;
+                count++;
             }
             selector = Selector<string>.Create(providerSelectorType, providers.Keys);
             return count;

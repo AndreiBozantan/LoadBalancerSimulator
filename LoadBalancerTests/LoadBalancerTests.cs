@@ -26,8 +26,8 @@ namespace LoadBalancerTests
             Assert.Equal(6, lb.ProvidersCount);
             Assert.Equal(6, c1);
 
-            var providers2 = Enumerable.Range(6, 6).Select(i => new Provider(i.ToString()));
-            var c2 = lb.Register(providers1);
+            var providers2 = Enumerable.Range(6, 10).Select(i => new Provider(i.ToString()));
+            var c2 = lb.Register(providers2);
             Assert.Equal(capacity, lb.ProvidersCount);
             Assert.Equal(capacity - 6, c2);
         }
