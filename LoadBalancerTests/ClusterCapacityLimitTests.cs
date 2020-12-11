@@ -79,7 +79,7 @@ namespace LoadBalancerTests
 
             while (!t.IsCompleted)
             {
-                await Task.Delay(1000);
+                await Task.Delay(800);
                 b.DisplayStatus(Console.Out, true);
             }
 

@@ -7,7 +7,7 @@ using LoadBalancerSimulator;
 
 namespace LoadBalancerTests
 {
-    public class UnitTest1
+    public class BasicTests
     {
         [Theory]
         [InlineData(6)]
@@ -57,16 +57,36 @@ namespace LoadBalancerTests
         }
 
         [Fact]
-        public async void GetRandomInvocationSuccess()
+        public async Task GetRandomInvocationSuccess()
         {
-            var lb = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.Random, TimeSpan.FromSeconds(2));
+            System.Console.WriteLine("Random invocation test");
+            var b = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.Random, TimeSpan.FromSeconds(0.8));
             var ids = new HashSet<string>{"0", "1", "2", "3", "4"};
-            lb.Register(ids.Select(id => new SimpleProvider(id)));
-            var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => lb.Get()));
-            foreach (var r in results)
+            b.Register(ids.Select(id => new SimpleProvider(id, 2000)));
+
+            var t = Task.WhenAll(Enumerable.Range(0, 10).Select(async i =>
             {
-                Assert.Contains(r, ids);
+                try
+                {
+                    System.Console.WriteLine($"Start request {i}");
+                    var r = await b.Get();
+                    Assert.Contains(r, ids);
+                    System.Console.WriteLine($"End request {i};");
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"Request {i} failed.");
+                    System.Console.WriteLine(ex);
+                }
+            }));
+
+            while (!t.IsCompleted)
+            {
+                await Task.Delay(500);
+                b.DisplayStatus(Console.Out, true);
             }
+
+            System.Console.WriteLine("======================");
         }
 
         [Fact]
