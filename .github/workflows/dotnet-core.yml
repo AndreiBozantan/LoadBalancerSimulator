@@ -22,6 +22,6 @@ jobs:
     - name: Build
       run: dotnet build -warnAsError --configuration Release --no-restore Samples/samples.csproj
     - name: Test
-      run: dotnet test --verbosity normal LoadBalancerTests/LoadBalancerTests.csproj.sln
+      run: dotnet test --verbosity normal LoadBalancerTests/LoadBalancerTests.csproj
     - name: Sample
       run: dotnet run Samples/samples.csproj.sln
