@@ -18,7 +18,7 @@ namespace LoadBalancerSimulator.Internal.Selectors
 
         protected override void UpdateState()
         {
-            index = index % values.Length;
+            index = values.Length == 0 ? 0 : index % values.Length;
         }
     }
 }
