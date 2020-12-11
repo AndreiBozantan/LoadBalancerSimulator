@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading.Tasks;
+
+using LoadBalancerSimulator.Selectors;
 
 namespace LoadBalancerSimulator
 {
@@ -64,66 +65,5 @@ namespace LoadBalancerSimulator
             return await provider.Get();
         }
 
-
-        private abstract class Selector<T>
-        {
-            protected T[] values;
-
-            public static Selector<T> Create(ProviderSelectorType providerSelectorType, IEnumerable<T> values)
-            {
-                switch (providerSelectorType)
-                {
-                    case ProviderSelectorType.Random: return new RandomSelector<T>(values);
-                    case ProviderSelectorType.RoundRobin: return new RoundRobinSelector<T>(values);
-                }
-                throw new ArgumentException("Invalid providerSelectorType");
-            }
-
-            public Selector(IEnumerable<T> values)
-            {
-                if (!values.Any())
-                {
-                    throw new ArgumentException("Empty values for Selector");
-                }
-                this.values = values.ToArray();
-                Array.Sort(this.values);
-            }
-
-            public abstract T Select();
-        }
-
-        private class RandomSelector<T> : Selector<T>
-        {
-            public Random rng = new Random();
-
-            public RandomSelector(IEnumerable<T> values) : base(values)
-            {
-            }
-
-            public override T Select()
-            {
-                var index = rng.Next(values.Length);
-                return values[index];
-            }
-        }
-
-        private class RoundRobinSelector<T> : Selector<T>
-        {
-            public int index = 0;
-
-            public RoundRobinSelector(IEnumerable<T> values) : base(values)
-            {
-            }
-
-            public override T Select()
-            {
-                lock (this)
-                {
-                    var val = values[index];
-                    index = (index + 1) % values.Length;
-                    return val;
-                }
-            }
-        }
     }
 }
