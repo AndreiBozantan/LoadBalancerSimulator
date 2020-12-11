@@ -10,10 +10,18 @@ namespace LoadBalancerSimulator
     {
         private ConcurrentDictionary<string, Provider> providers = new ConcurrentDictionary<string, Provider>();
         private Selector<string>? selector = null;
+        private ProviderSelectorType providerSelectorType;
 
-        public LoadBalancer(int capacity)
+        public enum ProviderSelectorType
+        {
+            Random,
+            RoundRobin
+        }
+
+        public LoadBalancer(int capacity, ProviderSelectorType pst)
         {
             Capacity = capacity;
+            providerSelectorType = pst;
         }
 
         public int Capacity { get; }
@@ -38,7 +46,7 @@ namespace LoadBalancerSimulator
                     break;
                 }
             }
-            selector = new RandomSelector<string>(providers.Keys);
+            selector = Selector<string>.Create(providerSelectorType, providers.Keys);
             return count;
         }
 
@@ -61,6 +69,16 @@ namespace LoadBalancerSimulator
         {
             protected T[] values;
 
+            public static Selector<T> Create(ProviderSelectorType providerSelectorType, IEnumerable<T> values)
+            {
+                switch (providerSelectorType)
+                {
+                    case ProviderSelectorType.Random: return new RandomSelector<T>(values);
+                    case ProviderSelectorType.RoundRobin: return new RoundRobinSelector<T>(values);
+                }
+                throw new ArgumentException("Invalid providerSelectorType");
+            }
+
             public Selector(IEnumerable<T> values)
             {
                 if (!values.Any())
@@ -68,6 +86,7 @@ namespace LoadBalancerSimulator
                     throw new ArgumentException("Empty values for Selector");
                 }
                 this.values = values.ToArray();
+                Array.Sort(this.values);
             }
 
             public abstract T Select();
@@ -85,6 +104,25 @@ namespace LoadBalancerSimulator
             {
                 var index = rng.Next(values.Length);
                 return values[index];
+            }
+        }
+
+        private class RoundRobinSelector<T> : Selector<T>
+        {
+            public int index = 0;
+
+            public RoundRobinSelector(IEnumerable<T> values) : base(values)
+            {
+            }
+
+            public override T Select()
+            {
+                lock (this)
+                {
+                    var val = values[index];
+                    index = (index + 1) % values.Length;
+                    return val;
+                }
             }
         }
     }

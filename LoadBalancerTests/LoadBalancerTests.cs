@@ -19,7 +19,7 @@ namespace LoadBalancerTests
         [InlineData(13)]
         public void TestRegisterCapacity(int capacity)
         {
-            var lb = new LoadBalancer(capacity);
+            var lb = new LoadBalancer(capacity, LoadBalancer.ProviderSelectorType.Random);
 
             var providers1 = Enumerable.Range(0, 6).Select(i => new Provider(i.ToString()));
             var c1 = lb.Register(providers1);
@@ -35,7 +35,7 @@ namespace LoadBalancerTests
         [Fact]
         public void TestDuplicateProviderId()
         {
-            var lb = new LoadBalancer(10);
+            var lb = new LoadBalancer(10, LoadBalancer.ProviderSelectorType.Random);
 
             var providers1 = Enumerable.Range(0, 5).Select(i => new Provider(i.ToString()));
             var c1 = lb.Register(providers1);
@@ -52,14 +52,14 @@ namespace LoadBalancerTests
         [Fact]
         public void GetWithNoProvidersThrows()
         {
-            var lb = new LoadBalancer(10);
+            var lb = new LoadBalancer(10, LoadBalancer.ProviderSelectorType.Random);
             Assert.ThrowsAsync<InvalidOperationException>(() => lb.Get());
         }
 
         [Fact]
         public async void GetRandomInvocationSuccess()
         {
-            var lb = new LoadBalancer(5);
+            var lb = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.Random);
             var ids = new HashSet<string>{"0", "1", "2", "3", "4"};
             lb.Register(ids.Select(id => new Provider(id)));
             var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => lb.Get()));
@@ -67,6 +67,15 @@ namespace LoadBalancerTests
             {
                 Assert.Contains(r, ids);
             }
+        }
+
+        [Fact]
+        public async void GetRoundRobinInvocationSuccess()
+        {
+            var lb = new LoadBalancer(5, LoadBalancer.ProviderSelectorType.RoundRobin);
+            lb.Register(Enumerable.Range(0, 5).Select(id => new Provider(id.ToString())));
+            var results = await Task.WhenAll(Enumerable.Range(0, 15).Select(_ => lb.Get()));
+            Assert.Equal(new[] { "0", "1", "2", "3", "4", "0", "1", "2", "3", "4", "0", "1", "2", "3", "4"}, results);
         }
     }
 }
